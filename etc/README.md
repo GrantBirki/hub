@@ -14,9 +14,17 @@ Homebrew programs](https://docs.brew.sh/Shell-Completion).
 Open your `.bashrc` file if you're on Linux, or your `.bash_profile` if you're on macOS and add:
 
 ```sh
-if [ -f /path/to/hub.bash_completion ]; then
-  . /path/to/hub.bash_completion
+if [ -f /path/to/hub.bash_completion.sh ]; then
+  . /path/to/hub.bash_completion.sh
 fi
+```
+
+Alternatively, to have completions dynamically loaded 
+(see the [bash-completion FAQ](https://github.com/scop/bash-completion#faq)):
+
+```sh
+cd ~/.local/share/bash-completion/completions/
+ln -s /path/to/hub.bash_completion.sh hub.bash
 ```
 
 ## zsh
