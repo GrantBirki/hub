@@ -381,7 +381,21 @@ EOF
     fi
   }
 
+  __hub_main() {
+    local can_unalias
+
+    if [ "$(type -t git)" != alias ]; then
+      alias git=hub
+      can_unalias=true
+    fi
+
+    __git_main "$@"
+
+    if [ -n "$can_unalias" ]; then
+      unalias git
+    fi
+  }
+
   # Enable completion for hub even when not using the alias
-  complete -o bashdefault -o default -o nospace -F _git hub 2>/dev/null \
-    || complete -o default -o nospace -F _git hub
+  __git_complete hub __hub_main
 fi
