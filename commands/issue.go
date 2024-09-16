@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +18,7 @@ var (
 	cmdIssue = &Command{
 		Run: listIssues,
 		Usage: `
-issue [-a <ASSIGNEE>] [-c <CREATOR>] [-@ <USER>] [-s <STATE>] [-f <FORMAT>] [-M <MILESTONE>] [-l <LABELS>] [-d <DATE>] [-o <SORT_KEY> [-^]] [-L <LIMIT>]
+issue [-a <ASSIGNEE>] [-c <CREATOR>] [-@ <USER>] [-s <STATE>] [-f <FORMAT>] [-M <MILESTONE>] [-l <LABELS>] [-d <DATE>] [-o <SORT_KEY> [-^]] [-L <LIMIT>] [-r REMOTE_URL]
 issue show [-f <FORMAT>] <NUMBER>
 issue create [-oc] [-m <MESSAGE>|-F <FILE>] [--edit] [-a <USERS>] [-M <MILESTONE>] [-l <LABELS>]
 issue update <NUMBER> [-m <MESSAGE>|-F <FILE>] [--edit] [-a <USERS>] [-M <MILESTONE>] [-l <LABELS>] [-s <STATE>]
@@ -169,6 +170,9 @@ With no arguments, show a list of open issues.
 	-L, --limit <LIMIT>
 		Display only the first <LIMIT> issues.
 
+	-r, --remote-url <REMOTE_URL>
+		Avoid requiring a local clone in order to get issue data. Simply provide REMOTE_URL.
+
 	--include-pulls
 		Include pull requests as well as issues.
 
@@ -192,6 +196,7 @@ hub-pr(1), hub(1)
 		-^, --sort-ascending
 		--include-pulls
 		-L, --limit N
+		-r, --remote-url REMOTE_URL
 		--color
 `,
 	}
@@ -257,12 +262,39 @@ func init() {
 	CmdRunner.Use(cmdIssue)
 }
 
-func listIssues(cmd *Command, args *Args) {
-	localRepo, err := github.LocalRepo()
-	utils.Check(err)
+func calculateProjectFromRFlag(rawRemote string) *github.Project {
+	var remote *github.Remote
 
-	project, err := localRepo.MainProject()
-	utils.Check(err)
+	if remoteURL, err := url.Parse(rawRemote); err == nil {
+		remote = &github.Remote{"origin", remoteURL, remoteURL}
+	} else {
+		fmt.Fprintf(os.Stderr, "invalid remote URL string: %s", rawRemote)
+		os.Exit(1)
+	}
+
+	if _, err := remote.Project(); err != nil {
+		fmt.Fprintf(os.Stderr, "no project for: %s because %s", rawRemote, err)
+		os.Exit(1)
+	}
+
+	validProject, _ := remote.Project()
+	return validProject
+}
+
+func listIssues(cmd *Command, args *Args) {
+	var project *github.Project
+
+	if rawRemote := args.Flag.Value("--remote-url"); args.Flag.HasReceived("--remote-url") {
+		project = calculateProjectFromRFlag(rawRemote)
+	}
+
+	if project == nil {
+		localRepo, err := github.LocalRepo()
+		utils.Check(err)
+
+		project, err = localRepo.MainProject()
+		utils.Check(err)
+	}
 
 	gh := github.NewClient(project.Host)
 
