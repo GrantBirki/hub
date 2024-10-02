@@ -184,6 +184,11 @@ Then(/^the git command should be unchanged$/) do
   assert_command_run @commands.last.sub(/^hub\b/, 'git')
 end
 
+Then(/^the "([^"]*)" config option should be "([^"]*)"$/) do |name, value|
+  run_command_and_stop %(git config --get-all "#{name}")
+  expect(last_command_started).to have_output(value)
+end
+
 Then(/^the url for "([^"]*)" should be "([^"]*)"$/) do |name, url|
   output = run_ignored_command %(git config --get-all remote.#{name}.url)
   expect(output).to include(url)

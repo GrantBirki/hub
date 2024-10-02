@@ -99,6 +99,17 @@ Feature: hub fork
     Then the output should not contain anything
     And there should be no "mislav" remote
 
+  Scenario: --set-push-default
+    Given the GitHub API server:
+      """
+      post('/repos/evilchelu/dotfiles/forks') {
+        status 202
+        json :name => 'dotfiles', :owner => { :login => 'mislav' }
+      }
+      """
+    When I successfully run `hub fork --set-push-default`
+    Then the "remote.pushDefault" config option should be "mislav"
+
   Scenario: Fork failed
     Given the GitHub API server:
       """

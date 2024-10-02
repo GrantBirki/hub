@@ -23,6 +23,9 @@ var cmdFork = &Command{
 	--org <ORGANIZATION>
 		Fork the repository within this organization.
 
+	-d, --set-push-default
+		Set remote.pushDefault to the name of the new git remote.
+
 ## Examples:
 		$ hub fork
 		[ repo forked on GitHub ]
@@ -119,6 +122,9 @@ func fork(cmd *Command, args *Args) {
 
 		args.Before("git", "remote", "add", "-f", newRemoteName, originURL)
 		args.Before("git", "remote", "set-url", newRemoteName, url)
+		if args.Flag.Bool("--set-push-default") {
+			args.Before("git", "config", "remote.pushDefault", newRemoteName)
+		}
 
 		args.AfterFn(func() error {
 			ui.Printf("new remote: %s\n", newRemoteName)
